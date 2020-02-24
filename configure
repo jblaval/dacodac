@@ -1,0 +1,20 @@
+#!/bin/bash
+# Configure environment for isia TP
+
+# Setup conda env - ensure your .conda dir is located on your workir, and move it if not
+[ -L ~/.conda ] && unlink ~/.conda
+[ -d ~/.conda ] && mv -v ~/.conda $WORKDIR
+[ ! -d $WORKDIR/.conda ] && mkdir $WORKDIR/.conda
+ln -s $WORKDIR/.conda ~/.conda
+
+# Create conda environment
+module load anaconda3/5.3.1
+conda create -y -n transformers_env pytorch numpy tqdm
+source activate transformers_env
+
+# Install transformers
+git clone https://github.com/huggingface/transformers
+cd transformers
+pip install .
+pip install -r ./examples/requirements.txt
+
