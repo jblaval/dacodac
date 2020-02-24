@@ -25,8 +25,8 @@ python -m torch.distributed.launch --nproc_per_node=2 ./transformers/examples/ru
   --do_train \
   --do_eval \
   --do_lower_case \
-  --train_file $SQUAD_DIR/train-v1.1.json \
-  --predict_file $SQUAD_DIR/dev-v1.1.json \
+  --train_file ./data_FQuAD/train.json \
+  --predict_file ./data_FQuAD/valid.json \
   --per_gpu_train_batch_size 12 \
   --learning_rate 3e-5 \
   --num_train_epochs 2 \
