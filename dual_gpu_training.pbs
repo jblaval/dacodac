@@ -20,8 +20,8 @@ source activate transformers_env
 
 # Run code
 python -m torch.distributed.launch --nproc_per_node=2 ./transformers/examples/run_squad.py \
-  --model_type camenbert \
-  --model_name_or_path camenbert-base \
+  --model_type camembert \
+  --model_name_or_path camembert-base \
   --do_train \
   --do_eval \
   --do_lower_case \
