@@ -1,0 +1,37 @@
+## BERT FQUAD
+
+# Run code
+python -m torch.distributed.launch --nproc_per_node=2 ./transformers/examples/run_squad.py \
+  --model_type bert \
+  --model_name_or_path bert-base-cased \
+  --do_train \
+  --do_eval \
+  --do_lower_case \
+  --train_file ./data_FQuAD/train.json \
+  --predict_file ./data_FQuAD/valid.json \
+  --per_gpu_train_batch_size 12 \
+  --learning_rate 3e-5 \
+  --num_train_epochs 2 \
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --threads 24 \
+  --output_dir ./debug_squad_$PBS_JOBID/
+
+## CAMENBERT FQUAD
+
+# Run code
+python -m torch.distributed.launch --nproc_per_node=2 ./transformers/examples/run_squad.py \
+  --model_type camenbert \
+  --model_name_or_path camenbert-base \
+  --do_train \
+  --do_eval \
+  --do_lower_case \
+  --train_file ./data_FQuAD/train.json \
+  --predict_file ./data_FQuAD/valid.json \
+  --per_gpu_train_batch_size 12 \
+  --learning_rate 3e-5 \
+  --num_train_epochs 2 \
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --threads 24 \
+  --output_dir ./debug_squad_$PBS_JOBID/

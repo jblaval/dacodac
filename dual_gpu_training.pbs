@@ -15,13 +15,13 @@ module load anaconda3/5.3.1
 source activate transformers_env
 
 # Path to dataset
-export SQUAD_DIR=/gpfs/opt/data/squad/1.1
-#export SQUAD_DIR=/gpfs/opt/data/squad/2.0
+##export SQUAD_DIR=/gpfs/opt/data/squad/1.1
+##export SQUAD_DIR=/gpfs/opt/data/squad/2.0
 
 # Run code
 python -m torch.distributed.launch --nproc_per_node=2 ./transformers/examples/run_squad.py \
-  --model_type bert \
-  --model_name_or_path bert-base-cased \
+  --model_type camenbert \
+  --model_name_or_path camenbert-base \
   --do_train \
   --do_eval \
   --do_lower_case \
