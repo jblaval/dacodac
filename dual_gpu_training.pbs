@@ -1,4 +1,4 @@
-#PBS -S /bin/bash
+#PBS -S/bin/bash
 #PBS -N squad_train_dual
 #PBS -j oe
 #PBS -l walltime=02:00:00
@@ -16,8 +16,8 @@ source activate transformers_env
 
 # Run code
 python -m torch.distributed.launch --nproc_per_node=2 ./transformers/examples/run_squad.py \
-  --model_type bert \
-  --model_name_or_path bert-base-cased \
+  --model_type camembert \
+  --model_name_or_path ./debug_squad_2231363.fusion/ \
   --do_train \
   --do_eval \
   --do_lower_case \
@@ -29,4 +29,5 @@ python -m torch.distributed.launch --nproc_per_node=2 ./transformers/examples/ru
   --max_seq_length 384 \
   --doc_stride 128 \
   --threads 24 \
-  --output_dir ./debug_squad_$PBS_JOBID/
+  --output_dir ./debug_squad_$PBS_JOBID/ \
+  --eval_all_checkpoints 
