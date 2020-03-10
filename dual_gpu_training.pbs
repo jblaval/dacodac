@@ -20,16 +20,11 @@ source activate transformers_env
 
 # Run code
 python -m torch.distributed.launch --nproc_per_node=2 ./transformers/examples/run_squad.py \
-  --model_type camembert \
-  --model_name_or_path camembert-base \
-  --do_train \
+  --model_name_or_path debug_squad_2231363.fusion \
+  --do_train False \
   --do_eval \
   --do_lower_case \
-  --train_file ./data_FQuAD/train.json \
   --predict_file ./data_FQuAD/valid.json \
-  --per_gpu_train_batch_size 12 \
-  --learning_rate 3e-5 \
-  --num_train_epochs 2 \
   --max_seq_length 384 \
   --doc_stride 128 \
   --threads 24 \
