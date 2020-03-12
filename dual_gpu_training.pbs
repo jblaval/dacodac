@@ -16,8 +16,8 @@ source activate transformers_env
 
 # Run code
 python -m torch.distributed.launch --nproc_per_node=2 ./transformers/examples/run_squad.py \
-  --model_type camembert \
-  --model_name_or_path ./debug_squad_2231363.fusion/ \
+  --model_type bert \
+  --model_name_or_path bert-large-cased \
   --do_train \
   --do_eval \
   --do_lower_case \
