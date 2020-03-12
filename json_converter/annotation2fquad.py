@@ -68,14 +68,32 @@ def save_output_json(path, output_dict, title):
     with open(f"{path}/output/{title}.json", "w+", encoding="utf-8") as f:
         f.write(json.dumps(output_dict, ensure_ascii=False))
 
-
 # main code
 
-output_dict = {"data": []}
+TRAIN_PROPORTION = 0.85
+
+all_files = os.listdir(f"{path}/context")
+switch_idx = int(TRAIN_PROPORTION * len(all_files))
+train_files, valid_files = all_files[:int(switch_idx)], all_files[switch_idx:]
+
+output_dict = {
+    'data' : []
+}
 curr_id = 0
-for f in os.listdir(f"{PATH}/context"):
-    title = f.split(".txt")[0]
-    data = import_data(PATH, title)
-    context = import_context(PATH, title)
-    output_dict, curr_id = get_output_dict(data, context, title, output_dict, curr_id)
-save_output_json(PATH, output_dict, "output")
+for f in train_files:
+  title = f.split('.txt')[0]
+  data = import_data(path, title)
+  context = import_context(path, title)
+  output_dict, curr_id = get_output_dict(data, context, title, output_dict, curr_id)
+save_output_json(path, output_dict, 'train')
+
+output_dict = {
+    'data' : []
+}
+curr_id = 0
+for f in valid_files:
+  title = f.split('.txt')[0]
+  data = import_data(path, title)
+  context = import_context(path, title)
+  output_dict, curr_id = get_output_dict(data, context, title, output_dict, curr_id)
+save_output_json(path, output_dict, 'valid')
