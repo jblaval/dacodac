@@ -1,17 +1,10 @@
 # -*- coding: utf8 -*-
 
-# The path (sys.argv[0]) must point to a folder with 3 subfolders inside :
-#     -> json : contains .json files from the annotation process
-#     -> contex : contains the context .txt files
-#     -> output : initially empty, it will contain the output .json files
-#
-# For a given context, the context should be TITLE.txt, the annotation file should be TITLE.json with the same TITLE. The corresponding result will be TITLE.json.
-#
-# e.g. for Google Colab : sys.argv[0] = '/content/drive/My Drive/DAC'
-
 import json
-import sys
 import os
+
+
+PATH = "/content/drive/My Drive/dataset_giec/temp_annotation"
 
 
 def import_data(path, title):
@@ -26,45 +19,40 @@ def import_context(path, title):
     return context
 
 
-def get_output_dict(data, context, title):
-    output_dict = {
-        "data": [
-            {
-                "title": title,
-                "paragraphs": [{"context": context, "qas": []}],  # will be completed
-            }
-        ]
+def get_output_dict(data, context, title, output_dict, curr_id):
+    current_entry = {
+        "title": title,
+        "paragraphs": [{"context": context, "qas": []}],  # will be completed
     }
-
-    id = 0
+    id = curr_id
     questions = {}  # stores the questions that have already appeared
-    for q in data["dict"]["annotations"][0]["value"]:
+    for q in data["annotations"][0]["value"]:
         if (
             q["question"] in questions.keys()
         ):  # if the question has already appeared, we just complete with the new answer
-            output_dict["data"][0]["paragraphs"][0]["qas"][questions["questions"]][
+            current_entry["paragraphs"][0]["qas"][questions[q["question"]] - curr_id][
                 "answer"
             ].append(
                 {
                     "answer_start": q["answer_start"],
-                    "text": q["answer"],
-                    "answer_type": q["answer-type"],
-                    "qa_type": q["qa_type"],
+                    "text": q["answer"]  # ,
+                    #'answer_type' : q['answer-type'],
+                    #'qa_type' : q['qa_type']
                 }
             )
         else:  # if the question appears for the first time, we add it both to the ouput dict and to the questions dict
-            output_dict["data"][0]["paragraphs"][0]["qas"].append(
+            current_entry["paragraphs"][0]["qas"].append(
                 {
                     "answer": [
                         {
                             "answer_start": q["answer_start"],
-                            "text": q["answer"],
-                            "answer_type": q["answer-type"],
-                            "qa_type": q["qa_type"],
+                            "text": q["answer"]  # ,
+                            #'answer_type' : q['answer-type'],
+                            #'qa_type' : q['qa_type']
                         }
                     ],
                     "question": q["question"],
-                    "question_type": q["question_type"],
+                    #'question_type' : q['question_type'],
                     "id": str(id).zfill(
                         5
                     ),  # the id are string corresponding to int starting from 0 and made of 5 digits
@@ -72,7 +60,8 @@ def get_output_dict(data, context, title):
             )
             questions[q["question"]] = id
             id += 1
-    return output_dict
+    output_dict["data"].append(current_entry)
+    return (output_dict, id)
 
 
 def save_output_json(path, output_dict, title):
@@ -80,15 +69,13 @@ def save_output_json(path, output_dict, title):
         f.write(json.dumps(output_dict, ensure_ascii=False))
 
 
-if __name__ == "__main__":
-    """
-    sys.argv[0] stands for the path of the root directory (without the final slash)
-    """
+# main code
 
-    path = sys.argv[0]
-    for f in os.listdir(f"{path}/context"):
-        title = f.split(".txt")[0]
-        data = import_data(path, title)
-        context = import_context(path, title)
-        output_dict = get_output_dict(data, context, title)
-        save_output_json(path, output_dict, title)
+output_dict = {"data": []}
+curr_id = 0
+for f in os.listdir(f"{PATH}/context"):
+    title = f.split(".txt")[0]
+    data = import_data(PATH, title)
+    context = import_context(PATH, title)
+    output_dict, curr_id = get_output_dict(data, context, title, output_dict, curr_id)
+save_output_json(PATH, output_dict, "output")
