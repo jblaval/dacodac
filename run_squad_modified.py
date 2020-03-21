@@ -481,12 +481,12 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             processor = SquadV2Processor() if args.version_2_with_negative else SquadV1Processor()
             if evaluate:
                 logger.info(f"Evaluate")
-                logger.info(f"args.predict_file: {args.predict_file)}")
+                logger.info(f"args.predict_file: {args.predict_fil)}")
                 examples = processor.get_dev_examples(args.data_dir, filename=args.predict_file)
                 logger.info(f"examples: {examples[0]}")
             else:
                 logger.info(f"Train")
-                logger.info(f"args.train_file: {args.train_file)}")
+                logger.info(f"args.train_file: {args.train_file}")
                 examples = processor.get_train_examples(args.data_dir, filename=args.train_file)
                 logger.info(f"examples: {examples[0]}")
 
