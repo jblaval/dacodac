@@ -317,6 +317,8 @@ def evaluate(args, model, tokenizer, prefix=""):
     if args.n_gpu > 1 and not isinstance(model, torch.nn.DataParallel):
         model = torch.nn.DataParallel(model)
 
+    prefix = prefix.lstrip('./')
+
     # Eval!
     logger.info("***** Running evaluation {} *****".format(prefix))
     logger.info("  Num examples = %d", len(dataset))
@@ -481,7 +483,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             processor = SquadV2Processor() if args.version_2_with_negative else SquadV1Processor()
             if evaluate:
                 logger.info(f"Evaluate")
-                logger.info(f"args.predict_file: {args.predict_file}")
+                logger.info(f"args.predict_file: {args.predict_fil}")
                 examples = processor.get_dev_examples(args.data_dir, filename=args.predict_file)
                 logger.info(f"examples: {examples[0]}")
             else:
@@ -856,6 +858,7 @@ def main():
             model.to(args.device)
 
             # Evaluate
+            logger.info(f"global_step : {global_step}")
             result = evaluate(args, model, tokenizer, prefix=global_step)
 
             result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
