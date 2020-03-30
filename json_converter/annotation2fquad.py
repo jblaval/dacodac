@@ -89,7 +89,6 @@ for f in train_files:
 save_output_json(PATH, output_dict, "train")
 
 output_dict = {"data": []}
-curr_id = 0
 for f in valid_files:
     title = f.split(".txt")[0]
     data = import_data(PATH, title)
