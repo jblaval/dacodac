@@ -69,6 +69,7 @@ def save_output_json(path, output_dict, title):
     with open(f"{path}/output/{title}.json", "w+", encoding="utf-8") as f:
         f.write(json.dumps(output_dict, ensure_ascii=False))
 
+
 # main code
 
 TRAIN_PROPORTION = 0.85
@@ -76,26 +77,22 @@ TRAIN_PROPORTION = 0.85
 all_files = os.listdir(f"{PATH}/context")
 rd.shuffle(all_files)
 switch_idx = int(TRAIN_PROPORTION * len(all_files))
-train_files, valid_files = all_files[:int(switch_idx)], all_files[switch_idx:]
+train_files, valid_files = all_files[: int(switch_idx)], all_files[switch_idx:]
 
-output_dict = {
-    'data' : []
-}
+output_dict = {"data": []}
 curr_id = 0
 for f in train_files:
-  title = f.split('.txt')[0]
-  data = import_data(PATH, title)
-  context = import_context(PATH, title)
-  output_dict, curr_id = get_output_dict(data, context, title, output_dict, curr_id)
-save_output_json(PATH, output_dict, 'train')
+    title = f.split(".txt")[0]
+    data = import_data(PATH, title)
+    context = import_context(PATH, title)
+    output_dict, curr_id = get_output_dict(data, context, title, output_dict, curr_id)
+save_output_json(PATH, output_dict, "train")
 
-output_dict = {
-    'data' : []
-}
+output_dict = {"data": []}
 curr_id = 0
 for f in valid_files:
-  title = f.split('.txt')[0]
-  data = import_data(PATH, title)
-  context = import_context(PATH, title)
-  output_dict, curr_id = get_output_dict(data, context, title, output_dict, curr_id)
-save_output_json(PATH, output_dict, 'valid')
+    title = f.split(".txt")[0]
+    data = import_data(PATH, title)
+    context = import_context(PATH, title)
+    output_dict, curr_id = get_output_dict(data, context, title, output_dict, curr_id)
+save_output_json(PATH, output_dict, "valid")
