@@ -2,6 +2,7 @@
 
 import json
 import os
+import random as rd
 
 
 PATH = "/content/drive/My Drive/dataset_giec/temp_annotation"
@@ -73,6 +74,7 @@ def save_output_json(path, output_dict, title):
 TRAIN_PROPORTION = 0.85
 
 all_files = os.listdir(f"{PATH}/context")
+rd.shuffle(all_files)
 switch_idx = int(TRAIN_PROPORTION * len(all_files))
 train_files, valid_files = all_files[:int(switch_idx)], all_files[switch_idx:]
 
