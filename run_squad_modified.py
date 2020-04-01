@@ -964,7 +964,7 @@ def main():
             logger.info("Result: {}".format(result))
             logger.info("Result keys: {}".format(list(result.keys()).append('global_step')))
             logger.info("Result values: {}".format(list(result.values()).append(global_step)))
-            for k, v in result.items()
+            for k, v in result.items():
                 logger.info("Result k: {}".format(k))
                 logger.info("Result v: {}".format(v))
 
