@@ -21,8 +21,8 @@ python -m torch.distributed.launch --nproc_per_node=2 ./run_squad_modified.py \
   --do_train \
   --do_eval \
   --do_lower_case \
-  --train_file ./data_giec/train.json \
-  --predict_file ./data_giec/valid.json \
+  --train_file ./data_FQuAD/train.json \
+  --predict_file ./data_FQuAD/valid.json \
   --per_gpu_train_batch_size 12 \
   --learning_rate 3e-5 \
   --num_train_epochs 2 \
