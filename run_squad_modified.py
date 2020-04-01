@@ -248,9 +248,6 @@ def train(args, train_dataset, model, tokenizer):
 
             if args.model_type in ["xlm", "roberta", "distilbert", "camembert"]:
                 del inputs["token_type_ids"]
-            
-            for i, example_index in enumerate(batch[3]):
-                logger.info(f"example_index.item(): {example_index.item()}")
 
             if args.model_type in ["xlnet", "xlm"]:
                 inputs.update({"cls_index": batch[5], "p_mask": batch[6]})
@@ -965,6 +962,9 @@ def main():
             logger.info(f"global_step : {global_step}")
             result = evaluate(args, model, tokenizer, prefix=global_step)
             logger.info("Results: {}".format(results))
+            logger.info("Results keys: {}".format(list(result.keys()).append('global_step')))
+            logger.info("Results values: {}".format(list(result.values()).append(global_step)))
+
 
             path_metrics = os.path.join(args.output_dir,"metrics_results.csv")
             try:
@@ -973,9 +973,11 @@ def main():
                     writer.writerow(
                         list(result.keys()).append('global_step')
                     )
+                with open(path_metrics, "a") as f:
+                    writer = csv.writer(f)
                     writer.writerow(
                         list(result.values()).append(global_step)
-                )
+                    )
             except:
                 logger.info("Results not saved")
 
