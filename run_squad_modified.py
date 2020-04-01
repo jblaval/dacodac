@@ -416,13 +416,13 @@ def evaluate(args, model, tokenizer, prefix=""):
                     )
 
             outputs = model(**inputs)
-
+            logger.info(f"len outputs: {len(outputs)}")
             loss = outputs[0]
+            logger.info(f"loss size: {loss.size()}")
+
 
             if args.n_gpu > 1:
                 loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
-            if args.gradient_accumulation_steps > 1:
-                loss = loss / args.gradient_accumulation_steps
             
             eval_loss += loss.item()
             
