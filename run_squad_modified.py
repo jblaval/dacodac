@@ -248,6 +248,9 @@ def train(args, train_dataset, model, tokenizer):
 
             if args.model_type in ["xlm", "roberta", "distilbert", "camembert"]:
                 del inputs["token_type_ids"]
+            
+            for i, example_index in enumerate(batch[3]):
+                logger.info(f"example_index.item(): {example_index.item()}")
 
             if args.model_type in ["xlnet", "xlm"]:
                 inputs.update({"cls_index": batch[5], "p_mask": batch[6]})
@@ -408,8 +411,8 @@ def evaluate(args, model, tokenizer, prefix=""):
                 del inputs["token_type_ids"]
 
             example_indices = batch[3].clone()
-            for i, example_index in enumerate(example_indices):
-                logger.info(f"example_index.item(): {example_index.item()}")
+            # for i, example_index in enumerate(example_indices):
+            #     logger.info(f"example_index.item(): {example_index.item()}")
 
             # XLNet and XLM use more arguments for their predictions
             if args.model_type in ["xlnet", "xlm"]:
@@ -434,8 +437,8 @@ def evaluate(args, model, tokenizer, prefix=""):
             eval_feature = features[example_index.item()]
             unique_id = int(eval_feature.unique_id)
 
-            logger.info(f"example_index.item(): {example_index.item()}")
-            logger.info(f"unique_id: {unique_id}")
+            # logger.info(f"example_index.item(): {example_index.item()}")
+            # logger.info(f"unique_id: {unique_id}")
 
             output = [to_list(output[i]) for output in outputs[1:]]
             # output = [to_list(output[i]) for output in outputs]
@@ -498,9 +501,6 @@ def evaluate(args, model, tokenizer, prefix=""):
             args.verbose_logging,
         )
     else:
-        for result in all_results:
-            logger.info(f"result.unique_id: {result.unique_id}")
-
         predictions = compute_predictions_logits(
             examples,
             features,
@@ -964,17 +964,20 @@ def main():
             # Evaluate
             logger.info(f"global_step : {global_step}")
             result = evaluate(args, model, tokenizer, prefix=global_step)
-            result
+            logger.info("Results: {}".format(results))
 
             path_metrics = os.path.join(args.output_dir,"metrics_results.csv")
-            with open(path_metrics, "a") as f:
-                writer = csv.writer(f)
-                writer.writerow(
-                    list(result.keys()).append('global_step')
+            try:
+                with open(path_metrics, "a") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(
+                        list(result.keys()).append('global_step')
+                    )
+                    writer.writerow(
+                        list(result.values()).append(global_step)
                 )
-                writer.writerow(
-                    list(result.values()).append(global_step)
-                )
+            except:
+                logger.info("Results not saved")
 
             result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
 
