@@ -17,7 +17,7 @@
 # limitations under the License.
 """ Finetuning the library models for question-answering on SQuAD (DistilBERT, Bert, XLM, XLNet)."""
 
-
+import csv
 import argparse
 import glob
 import logging
@@ -114,6 +114,17 @@ def train(args, train_dataset, model, tokenizer):
     train_sampler = RandomSampler(train_dataset) if args.local_rank == -1 else DistributedSampler(train_dataset)
     train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=args.train_batch_size)
 
+    dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=True, output_examples=True)
+
+    if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
+        os.makedirs(args.output_dir)
+
+    args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
+
+    # Note that DistributedSampler samples randomly
+    eval_sampler = SequentialSampler(dataset)
+    eval_dataloader = DataLoader(dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
+
     if args.max_steps > 0:
         t_total = args.max_steps
         args.num_train_epochs = args.max_steps // (len(train_dataloader) // args.gradient_accumulation_steps) + 1
@@ -201,8 +212,18 @@ def train(args, train_dataset, model, tokenizer):
     # Added here for reproductibility
     set_seed(args)
 
+    path_metrics_loss_train = os.path.join(args.output_dir,f"metrics_loss_train.csv")
+    with open(path_metrics_loss_train, "w+") as f:
+        writer = csv.writer(f)
+        writer.writerow(
+            [
+                'tr_loss',
+            ]
+        )
+
     for _ in train_iterator:
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
+        tr_loss_prev = tr_loss
         for step, batch in enumerate(epoch_iterator):
 
             # Skip past any already trained steps if resuming training
@@ -259,7 +280,7 @@ def train(args, train_dataset, model, tokenizer):
                 scheduler.step()  # Update learning rate schedule
                 model.zero_grad()
                 global_step += 1
-
+                
                 # Log metrics
                 if args.local_rank in [-1, 0] and args.logging_steps > 0 and global_step % args.logging_steps == 0:
                     # Only evaluate when single GPU otherwise metrics may not average well
@@ -288,9 +309,20 @@ def train(args, train_dataset, model, tokenizer):
                     torch.save(scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
                     logger.info("Saving optimizer and scheduler states to %s", output_dir)
 
+                    path_metrics_loss_train = os.path.join(args.output_dir,f"metrics_loss_train.csv")
+                    with open(path_metrics_loss_train, "a") as f:
+                        writer = csv.writer(f)
+                        writer.writerow(
+                            [
+                                tr_loss - tr_loss_prev,
+                            ]
+                        )
+
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
+        
+        
         if args.max_steps > 0 and global_step > args.max_steps:
             train_iterator.close()
             break
@@ -327,6 +359,8 @@ def evaluate(args, model, tokenizer, prefix=""):
     all_results = []
     start_time = timeit.default_timer()
 
+    eval_loss = 0
+
     for batch in tqdm(eval_dataloader, desc="Evaluating"):
         model.eval()
         batch = tuple(t.to(args.device) for t in batch)
@@ -353,6 +387,16 @@ def evaluate(args, model, tokenizer, prefix=""):
                     )
 
             outputs = model(**inputs)
+
+            loss = outputs[0]
+
+            if args.n_gpu > 1:
+                loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
+            if args.gradient_accumulation_steps > 1:
+                loss = loss / args.gradient_accumulation_steps
+            
+            eval_loss += loss.item()
+            
 
         for i, example_index in enumerate(example_indices):
             eval_feature = features[example_index.item()]
@@ -435,6 +479,7 @@ def evaluate(args, model, tokenizer, prefix=""):
 
     # Compute the F1 and exact scores.
     results = squad_evaluate(examples, predictions)
+    results['eval_loss'] = eval_loss
     return results
 
 
@@ -851,6 +896,25 @@ def main():
 
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
 
+        path_metrics = os.path.join(args.output_dir,"metrics_results.csv")
+        with open(path_metrics, "w+") as f:
+            writer = csv.writer(f)
+            writer.writerow(
+                [
+                    'exact',
+                    'f1',
+                    'total',
+                    'HasAns_exact',
+                    'HasAns_f1',
+                    'HasAns_total',
+                    'best_exact'
+                    'best_exact_thresh',
+                    'best_f1',
+                    'best_f1_thresh',
+                    'global_step'
+                ]
+            )
+
         for checkpoint in checkpoints:
             # Reload the model
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
@@ -860,8 +924,20 @@ def main():
             # Evaluate
             logger.info(f"global_step : {global_step}")
             result = evaluate(args, model, tokenizer, prefix=global_step)
+            result
+
+            path_metrics = os.path.join(args.output_dir,"metrics_results.csv")
+            with open(path_metrics, "a") as f:
+                writer = csv.writer(f)
+                writer.writerow(
+                    list(result.keys()).append('global_step')
+                )
+                writer.writerow(
+                    list(result.values()).append(global_step)
+                )
 
             result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
+
             results.update(result)
 
     logger.info("Results: {}".format(results))
