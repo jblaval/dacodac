@@ -491,6 +491,9 @@ def evaluate(args, model, tokenizer, prefix=""):
             args.verbose_logging,
         )
     else:
+        for result in all_results:
+            logger.info(f"result.unique_id: {result.unique_id}")
+            
         predictions = compute_predictions_logits(
             examples,
             features,
