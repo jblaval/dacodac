@@ -400,14 +400,16 @@ def evaluate(args, model, tokenizer, prefix=""):
                 "input_ids": batch[0],
                 "attention_mask": batch[1],
                 "token_type_ids": batch[2],
-                # "start_positions": batch[3],
-                # "end_positions": batch[4]
+                "start_positions": batch[3],
+                "end_positions": batch[4]
             }
 
             if args.model_type in ["xlm", "roberta", "distilbert", "camembert"]:
                 del inputs["token_type_ids"]
 
-            example_indices = batch[3]
+            example_indices = batch[3].clone()
+            for i, example_index in enumerate(example_indices):
+                logger.info(f"example_index.item(): {example_index.item()}")
 
             # XLNet and XLM use more arguments for their predictions
             if args.model_type in ["xlnet", "xlm"]:
@@ -419,13 +421,13 @@ def evaluate(args, model, tokenizer, prefix=""):
                     )
 
             outputs = model(**inputs)
-            # loss = outputs[0]
+            loss = outputs[0]
 
 
-            # if args.n_gpu > 1:
-            #     loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
+            if args.n_gpu > 1:
+                loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
             
-            # eval_loss += loss.item()
+            eval_loss += loss.item()
             
 
         for i, example_index in enumerate(example_indices):
@@ -435,8 +437,8 @@ def evaluate(args, model, tokenizer, prefix=""):
             logger.info(f"example_index.item(): {example_index.item()}")
             logger.info(f"unique_id: {unique_id}")
 
-            # output = [to_list(output[i]) for output in outputs[1:]]
-            output = [to_list(output[i]) for output in outputs]
+            output = [to_list(output[i]) for output in outputs[1:]]
+            # output = [to_list(output[i]) for output in outputs]
 
 
             # Some models (XLNet, XLM) use 5 arguments for their predictions, while the other "simpler"
