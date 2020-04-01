@@ -217,6 +217,7 @@ def train(args, train_dataset, model, tokenizer):
         writer = csv.writer(f)
         writer.writerow(
             [
+                'epoch_global_step'
                 'tr_loss',
             ]
         )
@@ -317,6 +318,7 @@ def train(args, train_dataset, model, tokenizer):
                         writer = csv.writer(f)
                         writer.writerow(
                             [
+                                global_step,
                                 tr_loss - tr_loss_prev,
                             ]
                         )
@@ -340,6 +342,7 @@ def train(args, train_dataset, model, tokenizer):
                 writer = csv.writer(f)
                 writer.writerow(
                     [
+                        epoch,
                         tr_loss - tr_loss_prev,
                     ]
                 )
