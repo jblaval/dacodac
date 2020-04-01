@@ -399,6 +399,8 @@ def evaluate(args, model, tokenizer, prefix=""):
                 "input_ids": batch[0],
                 "attention_mask": batch[1],
                 "token_type_ids": batch[2],
+                "start_positions": batch[3],
+                "end_positions": batch[4]
             }
 
             if args.model_type in ["xlm", "roberta", "distilbert", "camembert"]:
