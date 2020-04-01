@@ -938,6 +938,7 @@ def main():
             writer = csv.writer(f)
             writer.writerow(
                 [
+                    'global_step',
                     'exact',
                     'f1',
                     'total',
@@ -948,7 +949,6 @@ def main():
                     'best_exact_thresh',
                     'best_f1',
                     'best_f1_thresh',
-                    'global_step'
                 ]
             )
 
@@ -961,26 +961,23 @@ def main():
             # Evaluate
             logger.info(f"global_step : {global_step}")
             result = evaluate(args, model, tokenizer, prefix=global_step)
-            logger.info("Result: {}".format(result))
-            logger.info("Result keys: {}".format(list(result.keys()).append('global_step')))
-            logger.info("Result values: {}".format(list(result.values()).append(global_step)))
+            list_keys = ['global_step']
+            list_val = [global_step]
             for k, v in result.items():
-                logger.info("Result k: {}".format(k))
-                logger.info("Result v: {}".format(v))
-
-
+                list_keys.append(k)
+                list_val.append(v)
 
             path_metrics = os.path.join(args.output_dir,"metrics_results.csv")
             try:
                 with open(path_metrics, "a") as f:
                     writer = csv.writer(f)
                     writer.writerow(
-                        list(result.keys()).append('global_step')
+                        list_keys
                     )
                 with open(path_metrics, "a") as f:
                     writer = csv.writer(f)
                     writer.writerow(
-                        list(result.values()).append(global_step)
+                        list_val
                     )
             except:
                 logger.info("Results not saved")
