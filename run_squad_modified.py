@@ -961,9 +961,13 @@ def main():
             # Evaluate
             logger.info(f"global_step : {global_step}")
             result = evaluate(args, model, tokenizer, prefix=global_step)
-            logger.info("Results: {}".format(results))
-            logger.info("Results keys: {}".format(list(result.keys()).append('global_step')))
-            logger.info("Results values: {}".format(list(result.values()).append(global_step)))
+            logger.info("Result: {}".format(result))
+            logger.info("Result keys: {}".format(list(result.keys()).append('global_step')))
+            logger.info("Result values: {}".format(list(result.values()).append(global_step)))
+            for k, v in result.items()
+                logger.info("Result k: {}".format(k))
+                logger.info("Result v: {}".format(v))
+
 
 
             path_metrics = os.path.join(args.output_dir,"metrics_results.csv")
