@@ -935,7 +935,6 @@ def main():
                     os.path.dirname(c)
                     for c in sorted(glob.glob(args.model_name_or_path + "/**/" + WEIGHTS_NAME, recursive=True))
                 )
-                logging.getLogger("transformers.modeling_utils").setLevel(logging.WARN)  # Reduce model loading logs
             logger.info("Loading checkpoint %s for evaluation", args.model_name_or_path)
 
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
