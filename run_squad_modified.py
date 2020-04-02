@@ -222,6 +222,9 @@ def train(args, train_dataset, model, tokenizer):
             ]
         )
 
+    logger.info(f"len train_dataloader: {len(train_dataloader)}")
+    args.save_steps = len(train_dataloader)
+
     for epoch_step in train_iterator:
         epoch_step = epoch_step + epochs_trained
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
@@ -324,35 +327,6 @@ def train(args, train_dataset, model, tokenizer):
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
-        
-        # if epoch_step < args.num_train_epochs -1:
-        output_dir = os.path.join(args.output_dir, "checkpoint_epoch-{}".format(epoch_step))
-        if not os.path.exists(output_dir):
-            try:
-                os.makedirs(output_dir)
-            except:
-                logger.info(f"Cannot make dir at path : {output_dir}")
-        # Take care of distributed/parallel training
-        model_to_save = model.module if hasattr(model, "module") else model
-        model_to_save.save_pretrained(output_dir)
-        tokenizer.save_pretrained(output_dir)
-
-        torch.save(args, os.path.join(output_dir, "training_args.bin"))
-        logger.info("Saving model checkpoint to %s", output_dir)
-
-        torch.save(optimizer.state_dict(), os.path.join(output_dir, "optimizer.pt"))
-        torch.save(scheduler.state_dict(), os.path.join(output_dir, "scheduler.pt"))
-        logger.info("Saving optimizer and scheduler states to %s", output_dir)
-
-        path_metrics_loss_train = os.path.join(args.output_dir,f"metrics_loss_train.csv")
-        with open(path_metrics_loss_train, "a") as f:
-            writer = csv.writer(f)
-            writer.writerow(
-                [
-                    epoch_step,
-                    tr_loss - tr_loss_prev,
-                ]
-            )
 
         if args.max_steps > 0 and global_step > args.max_steps:
             train_iterator.close()
@@ -938,6 +912,8 @@ def main():
             logger.info("Loading checkpoint %s for evaluation", args.model_name_or_path)
 
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
+
+        
 
         path_metrics = os.path.join(args.output_dir,"metrics_results.csv")
         with open(path_metrics, "w+") as f:
