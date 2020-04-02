@@ -329,7 +329,10 @@ def train(args, train_dataset, model, tokenizer):
         
         output_dir = os.path.join(args.output_dir, "checkpoint_epoch-{}".format(epoch_step))
         if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
+            try:
+                os.makedirs(output_dir)
+            except:
+                logger.info(f"Cannot make dir at path : {output_dir}")
         # Take care of distributed/parallel training
         model_to_save = model.module if hasattr(model, "module") else model
         model_to_save.save_pretrained(output_dir)
