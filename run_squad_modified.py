@@ -938,6 +938,7 @@ def main():
             logger.info("Loading checkpoint %s for evaluation", args.model_name_or_path)
 
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
+        logger.info("archive_file: {}".format(archive_file))
 
         path_metrics = os.path.join(args.output_dir,"metrics_results.csv")
         with open(path_metrics, "w+") as f:
@@ -961,7 +962,7 @@ def main():
         for checkpoint in checkpoints:
             # Reload the model
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            model = model_class.from_pretrained(checkpoint)  # , force_download=True)
+            model = model_class.from_pretrained(checkpoint, force_download=True)
             model.to(args.device)
 
             # Evaluate
