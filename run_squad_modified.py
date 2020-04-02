@@ -325,7 +325,7 @@ def train(args, train_dataset, model, tokenizer):
                 epoch_iterator.close()
                 break
         
-        if epoch_step < args.num_train_epochs -1:
+        # if epoch_step < args.num_train_epochs -1:
         output_dir = os.path.join(args.output_dir, "checkpoint_epoch-{}".format(epoch_step))
         if not os.path.exists(output_dir):
             try:
