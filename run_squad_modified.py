@@ -224,8 +224,8 @@ def train(args, train_dataset, model, tokenizer):
 
     epoch = 0
 
-    for _ in train_iterator:
-        epoch += 1
+    for epoch_step in train_iterator:
+        epoch_step = epoch_step + epochs_trained
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
         tr_loss_prev = tr_loss
         for step, batch in enumerate(epoch_iterator):
@@ -322,13 +322,12 @@ def train(args, train_dataset, model, tokenizer):
                                 tr_loss - tr_loss_prev,
                             ]
                         )
-            
                     
             if args.max_steps > 0 and global_step > args.max_steps:
                 epoch_iterator.close()
                 break
         
-        output_dir = os.path.join(args.output_dir, "checkpoint-epoch{}".format(epoch))
+        output_dir = os.path.join(args.output_dir, "checkpoint_epoch-{}".format(epoch_step))
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
         # Take care of distributed/parallel training
@@ -348,11 +347,11 @@ def train(args, train_dataset, model, tokenizer):
             writer = csv.writer(f)
             writer.writerow(
                 [
-                    epoch,
+                    epoch_step,
                     tr_loss - tr_loss_prev,
                 ]
             )
-        
+
         if args.max_steps > 0 and global_step > args.max_steps:
             train_iterator.close()
             break
