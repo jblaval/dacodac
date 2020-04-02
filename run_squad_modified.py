@@ -222,8 +222,6 @@ def train(args, train_dataset, model, tokenizer):
             ]
         )
 
-    epoch = 0
-
     for epoch_step in train_iterator:
         epoch_step = epoch_step + epochs_trained
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
@@ -327,6 +325,7 @@ def train(args, train_dataset, model, tokenizer):
                 epoch_iterator.close()
                 break
         
+        if epoch_step < args.num_train_epochs -1:
         output_dir = os.path.join(args.output_dir, "checkpoint_epoch-{}".format(epoch_step))
         if not os.path.exists(output_dir):
             try:
@@ -930,6 +929,13 @@ def main():
                 )
                 logging.getLogger("transformers.modeling_utils").setLevel(logging.WARN)  # Reduce model loading logs
         else:
+            checkpoints = [args.model_name_or_path]
+            if args.eval_all_checkpoints:
+                checkpoints = list(
+                    os.path.dirname(c)
+                    for c in sorted(glob.glob(args.model_name_or_path + "/**/" + WEIGHTS_NAME, recursive=True))
+                )
+                logging.getLogger("transformers.modeling_utils").setLevel(logging.WARN)  # Reduce model loading logs
             logger.info("Loading checkpoint %s for evaluation", args.model_name_or_path)
             checkpoints = [args.model_name_or_path]
 
