@@ -531,8 +531,8 @@ def evaluate_train(args, model, tokenizer, prefix=""):
                 del inputs["token_type_ids"]
 
             example_indices = batch[3].clone()
-            # for i, example_index in enumerate(example_indices):
-            #     logger.info(f"example_index.item(): {example_index.item()}")
+            for i, example_index in enumerate(example_indices):
+                logger.info(f"example_index.item(): {example_index.item()}")
 
             # XLNet and XLM use more arguments for their predictions
             if args.model_type in ["xlnet", "xlm"]:
