@@ -491,9 +491,164 @@ def evaluate(args, model, tokenizer, prefix=""):
 
     # Compute the F1 and exact scores.
     results = squad_evaluate(examples, predictions)
-    results['eval_loss'] = eval_loss
+    results['loss'] = eval_loss
     return results
 
+def evaluate_train(args, model, tokenizer, prefix=""):
+    dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=True)
+
+    if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
+        os.makedirs(args.output_dir)
+
+    args.eval_batch_size = args.per_gpu_eval_batch_size * max(1, args.n_gpu)
+
+    # Note that DistributedSampler samples randomly
+    eval_sampler = SequentialSampler(dataset)
+    eval_dataloader = DataLoader(dataset, sampler=eval_sampler, batch_size=args.eval_batch_size)
+
+    # multi-gpu evaluate
+    if args.n_gpu > 1 and not isinstance(model, torch.nn.DataParallel):
+        model = torch.nn.DataParallel(model)
+
+    prefix = prefix.lstrip('./')
+
+    # Eval!
+    logger.info("***** Running evaluation {} *****".format(prefix))
+    logger.info("  Num examples = %d", len(dataset))
+    logger.info("  Batch size = %d", args.eval_batch_size)
+
+    all_results = []
+    start_time = timeit.default_timer()
+
+    eval_loss = 0
+
+    for batch in tqdm(eval_dataloader, desc="Evaluating"):
+        model.eval()
+        batch = tuple(t.to(args.device) for t in batch)
+
+        with torch.no_grad():
+            inputs = {
+                "input_ids": batch[0],
+                "attention_mask": batch[1],
+                "token_type_ids": batch[2],
+                "start_positions": batch[3],
+                "end_positions": batch[4]
+            }
+
+            if args.model_type in ["xlm", "roberta", "distilbert", "camembert"]:
+                del inputs["token_type_ids"]
+
+            example_indices = batch[3].clone()
+            # for i, example_index in enumerate(example_indices):
+            #     logger.info(f"example_index.item(): {example_index.item()}")
+
+            # XLNet and XLM use more arguments for their predictions
+            if args.model_type in ["xlnet", "xlm"]:
+                inputs.update({"cls_index": batch[4], "p_mask": batch[5]})
+                # for lang_id-sensitive xlm models
+                if hasattr(model, "config") and hasattr(model.config, "lang2id"):
+                    inputs.update(
+                        {"langs": (torch.ones(batch[0].shape, dtype=torch.int64) * args.lang_id).to(args.device)}
+                    )
+
+            outputs = model(**inputs)
+            loss = outputs[0]
+
+
+            if args.n_gpu > 1:
+                loss = loss.mean()  # mean() to average on multi-gpu parallel (not distributed) training
+            
+            eval_loss += loss.item()
+            
+
+        for i, example_index in enumerate(example_indices):
+            eval_feature = features[example_index.item()]
+            unique_id = int(eval_feature.unique_id)
+
+            # logger.info(f"example_index.item(): {example_index.item()}")
+            # logger.info(f"unique_id: {unique_id}")
+
+            output = [to_list(output[i]) for output in outputs[1:]]
+            # output = [to_list(output[i]) for output in outputs]
+
+
+            # Some models (XLNet, XLM) use 5 arguments for their predictions, while the other "simpler"
+            # models only use two.
+            if len(output) >= 5:
+                start_logits = output[0]
+                start_top_index = output[1]
+                end_logits = output[2]
+                end_top_index = output[3]
+                cls_logits = output[4]
+
+                result = SquadResult(
+                    unique_id,
+                    start_logits,
+                    end_logits,
+                    start_top_index=start_top_index,
+                    end_top_index=end_top_index,
+                    cls_logits=cls_logits,
+                )
+
+            else:
+                start_logits, end_logits = output
+                result = SquadResult(unique_id, start_logits, end_logits)
+
+            all_results.append(result)
+
+    evalTime = timeit.default_timer() - start_time
+    logger.info("  Evaluation done in total %f secs (%f sec per example)", evalTime, evalTime / len(dataset))
+
+    # Compute predictions
+    output_prediction_file = os.path.join(args.output_dir, "predictions_{}.json".format(prefix))
+    output_nbest_file = os.path.join(args.output_dir, "nbest_predictions_{}.json".format(prefix))
+
+    if args.version_2_with_negative:
+        output_null_log_odds_file = os.path.join(args.output_dir, "null_odds_{}.json".format(prefix))
+    else:
+        output_null_log_odds_file = None
+
+    # XLNet and XLM use a more complex post-processing procedure
+    if args.model_type in ["xlnet", "xlm"]:
+        start_n_top = model.config.start_n_top if hasattr(model, "config") else model.module.config.start_n_top
+        end_n_top = model.config.end_n_top if hasattr(model, "config") else model.module.config.end_n_top
+
+        predictions = compute_predictions_log_probs(
+            examples,
+            features,
+            all_results,
+            args.n_best_size,
+            args.max_answer_length,
+            output_prediction_file,
+            output_nbest_file,
+            output_null_log_odds_file,
+            start_n_top,
+            end_n_top,
+            args.version_2_with_negative,
+            tokenizer,
+            args.verbose_logging,
+        )
+    else:
+        predictions = compute_predictions_logits(
+            examples,
+            features,
+            all_results,
+            args.n_best_size,
+            args.max_answer_length,
+            args.do_lower_case,
+            output_prediction_file,
+            output_nbest_file,
+            output_null_log_odds_file,
+            args.verbose_logging,
+            args.version_2_with_negative,
+            args.null_score_diff_threshold,
+            tokenizer,
+        )
+
+    # Compute the F1 and exact scores.
+    results = squad_evaluate(examples, predictions)
+    results['loss'] = eval_loss
+    return results
 
 def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
     if args.local_rank not in [-1, 0] and not evaluate:
@@ -891,7 +1046,8 @@ def main():
         model.to(args.device)
 
     # Evaluation - we can ask to evaluate all the checkpoints (sub-directories) in a directory
-    results = {}
+    results_val = {}
+    results_train = {}
     if args.do_eval and args.local_rank in [-1, 0]:
         if args.do_train:
             logger.info("Loading checkpoints saved during training for evaluation")
@@ -915,8 +1071,8 @@ def main():
 
         
 
-        path_metrics = os.path.join(args.output_dir,"metrics_results.csv")
-        with open(path_metrics, "w+") as f:
+        path_metrics_val = os.path.join(args.output_dir,"metrics_results_val.csv")
+        with open(path_metrics_val, "w+") as f:
             writer = csv.writer(f)
             writer.writerow(
                 [
@@ -931,6 +1087,27 @@ def main():
                     'best_exact_thresh',
                     'best_f1',
                     'best_f1_thresh',
+                    'loss',
+                ]
+            )
+        
+        path_metrics_train = os.path.join(args.output_dir,"metrics_results_val.csv")
+        with open(path_metrics_train, "w+") as f:
+            writer = csv.writer(f)
+            writer.writerow(
+                [
+                    'global_step',
+                    'exact',
+                    'f1',
+                    'total',
+                    'HasAns_exact',
+                    'HasAns_f1',
+                    'HasAns_total',
+                    'best_exact'
+                    'best_exact_thresh',
+                    'best_f1',
+                    'best_f1_thresh',
+                    'loss',
                 ]
             )
 
@@ -949,14 +1126,14 @@ def main():
                 list_keys.append(k)
                 list_val.append(v)
 
-            path_metrics = os.path.join(args.output_dir,"metrics_results.csv")
+            path_metrics_val = os.path.join(args.output_dir,"metrics_results_val.csv")
             try:
-                with open(path_metrics, "a") as f:
+                with open(path_metrics_val, "a") as f:
                     writer = csv.writer(f)
                     writer.writerow(
                         list_keys
                     )
-                with open(path_metrics, "a") as f:
+                with open(path_metrics_val, "a") as f:
                     writer = csv.writer(f)
                     writer.writerow(
                         list_val
@@ -966,11 +1143,38 @@ def main():
 
             result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
 
-            results.update(result)
+            results_val.update(result)
 
-    logger.info("Results: {}".format(results))
+            result = evaluate_train(args, model, tokenizer, prefix=global_step)
+            list_keys = ['global_step']
+            list_val = [global_step]
+            for k, v in result.items():
+                list_keys.append(k)
+                list_val.append(v)
 
-    return results
+            path_metrics_val = os.path.join(args.output_dir,"metrics_results_val.csv")
+            try:
+                with open(path_metrics_val, "a") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(
+                        list_keys
+                    )
+                with open(path_metrics_val, "a") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(
+                        list_val
+                    )
+            except:
+                logger.info("Results not saved")
+
+            result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
+
+            results_train.update(result)
+
+    logger.info("results_val: {}".format(results_val))
+    logger.info("results_train: {}".format(results_train))
+
+    return results_val
 
 
 if __name__ == "__main__":
