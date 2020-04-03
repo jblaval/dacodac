@@ -557,8 +557,8 @@ def evaluate_train(args, model, tokenizer, prefix=""):
             eval_feature = features[example_index.item()]
             unique_id = int(eval_feature.unique_id)
 
-            # logger.info(f"example_index.item(): {example_index.item()}")
-            # logger.info(f"unique_id: {unique_id}")
+            logger.info(f"example_index.item(): {example_index.item()}")
+            logger.info(f"unique_id: {unique_id}")
 
             output = [to_list(output[i]) for output in outputs[1:]]
             # output = [to_list(output[i]) for output in outputs]
