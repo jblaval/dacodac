@@ -200,6 +200,8 @@ def train(args, train_dataset, model, tokenizer):
     )
     # Added here for reproductibility
     set_seed(args)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
 
     path_metrics_loss_train = os.path.join(args.output_dir,f"metrics_loss_train.csv")
     with open(path_metrics_loss_train, "w+") as f:
@@ -217,7 +219,6 @@ def train(args, train_dataset, model, tokenizer):
     for epoch_step in train_iterator:
         epoch_step = epoch_step + epochs_trained
         epoch_iterator = tqdm(train_dataloader, desc="Iteration", disable=args.local_rank not in [-1, 0])
-        tr_loss_prev = tr_loss
         for step, batch in enumerate(epoch_iterator):
 
             # Skip past any already trained steps if resuming training
@@ -309,7 +310,7 @@ def train(args, train_dataset, model, tokenizer):
                         writer.writerow(
                             [
                                 global_step,
-                                tr_loss - tr_loss_prev,
+                                tr_loss,
                             ]
                         )
                     
