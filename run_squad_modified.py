@@ -1108,39 +1108,39 @@ def main():
                     'loss',
                 ]
             )
-        for checkpoint in checkpoints:
-            # Reload the model
-            global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
-            model = model_class.from_pretrained(checkpoint, force_download=True)
-            model.to(args.device)
+        # for checkpoint in checkpoints:
+        #     # Reload the model
+        #     global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
+        #     model = model_class.from_pretrained(checkpoint, force_download=True)
+        #     model.to(args.device)
 
-            # Evaluate
-            logger.info(f"global_step : {global_step}")
-            result = evaluate_train(args, model, tokenizer, prefix=global_step)
-            list_keys = ['global_step']
-            list_val = [global_step]
-            for k, v in result.items():
-                list_keys.append(k)
-                list_val.append(v)
+        #     # Evaluate
+        #     logger.info(f"global_step : {global_step}")
+        #     result = evaluate_train(args, model, tokenizer, prefix=global_step)
+        #     list_keys = ['global_step']
+        #     list_val = [global_step]
+        #     for k, v in result.items():
+        #         list_keys.append(k)
+        #         list_val.append(v)
 
-            path_metrics_val = os.path.join(args.output_dir,"metrics_results_val.csv")
-            try:
-                with open(path_metrics_val, "a") as f:
-                    writer = csv.writer(f)
-                    writer.writerow(
-                        list_keys
-                    )
-                with open(path_metrics_val, "a") as f:
-                    writer = csv.writer(f)
-                    writer.writerow(
-                        list_val
-                    )
-            except:
-                logger.info("Results not saved")
+        #     path_metrics_val = os.path.join(args.output_dir,"metrics_results_val.csv")
+        #     try:
+        #         with open(path_metrics_val, "a") as f:
+        #             writer = csv.writer(f)
+        #             writer.writerow(
+        #                 list_keys
+        #             )
+        #         with open(path_metrics_val, "a") as f:
+        #             writer = csv.writer(f)
+        #             writer.writerow(
+        #                 list_val
+        #             )
+        #     except:
+        #         logger.info("Results not saved")
 
-            result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
+        #     result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
 
-            results_train.update(result)
+        #     results_train.update(result)
 
         for checkpoint in checkpoints:
             # Reload the model
