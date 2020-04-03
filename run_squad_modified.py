@@ -695,14 +695,15 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=Fals
                 logger.info(f"args.train_file: {args.train_file}")
                 examples = processor.get_train_examples(args.data_dir, filename=args.train_file)
                 logger.info(f"examples: {examples[0]}")
-
+                
+        eval_bool = not evaluate or not evaluate_train
         features, dataset = squad_convert_examples_to_features(
             examples=examples,
             tokenizer=tokenizer,
             max_seq_length=args.max_seq_length,
             doc_stride=args.doc_stride,
             max_query_length=args.max_query_length,
-            is_training=not evaluate,
+            is_training=eval_bool,
             return_dataset="pt",
             threads=args.threads,
         )
