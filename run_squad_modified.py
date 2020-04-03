@@ -484,6 +484,8 @@ def evaluate(args, model, tokenizer, prefix=""):
     return results
 
 def evaluate_train(args, model, tokenizer, prefix=""):
+    import pdb 
+    pdb.set_trace()
     dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=True, output_examples=True)
     logger.info("load_and_cache_examples done")
     if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
