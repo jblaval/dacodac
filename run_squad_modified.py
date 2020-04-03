@@ -495,7 +495,7 @@ def evaluate(args, model, tokenizer, prefix=""):
     return results
 
 def evaluate_train(args, model, tokenizer, prefix=""):
-    dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=True)
+    dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=True, output_examples=True)
 
     if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
         os.makedirs(args.output_dir)
@@ -650,8 +650,8 @@ def evaluate_train(args, model, tokenizer, prefix=""):
     results['loss'] = eval_loss
     return results
 
-def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
-    if args.local_rank not in [-1, 0] and not evaluate:
+def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=False, output_examples=False):
+    if args.local_rank not in [-1, 0] and (not evaluate or evaluate_train):
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
 
@@ -719,7 +719,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             logger.info("Saving features into cached file %s", cached_features_file)
             torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
 
-    if args.local_rank == 0 and not evaluate:
+    if args.local_rank == 0 and (not evaluate or evaluate_train):
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
 
