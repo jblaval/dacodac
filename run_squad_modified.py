@@ -200,8 +200,8 @@ def train(args, train_dataset, model, tokenizer):
     )
     # Added here for reproductibility
     set_seed(args)
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+    if not os.path.exists(args.output_dir):
+        os.makedirs(args.output_dir)
 
     path_metrics_loss_train = os.path.join(args.output_dir,f"metrics_loss_train.csv")
     with open(path_metrics_loss_train, "w+") as f:
