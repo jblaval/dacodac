@@ -695,7 +695,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=Fals
                 logger.info(f"args.train_file: {args.train_file}")
                 examples = processor.get_train_examples(args.data_dir, filename=args.train_file)
                 logger.info(f"examples: {examples[0]}")
-                
+
         eval_bool = not evaluate or not evaluate_train
         features, dataset = squad_convert_examples_to_features(
             examples=examples,
@@ -712,8 +712,9 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=Fals
             logger.info("Saving features into cached file %s", cached_features_file)
             torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
             logger.info("Saving features into cached file %s done ", cached_features_file)
-    logger.info("Line 714")
+    
     if args.local_rank == 0 and (not evaluate or not evaluate_train):
+        logger.info("Line 714")
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
         logger.info("torch.distributed.barrier() done")
