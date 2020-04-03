@@ -710,12 +710,15 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=Fals
         if args.local_rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)
             torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
+            logger.info("Saving features into cached file %s done ", cached_features_file)
 
     if args.local_rank == 0 and (not evaluate or not evaluate_train):
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
+        logger.info("torch.distributed.barrier() done")
 
     if output_examples:
+        logger.info("Outputs examples")
         return dataset, examples, features
     return dataset
 
@@ -1060,8 +1063,7 @@ def main():
             logger.info("Loading checkpoint %s for evaluation", args.model_name_or_path)
 
         logger.info("Evaluate the following checkpoints: %s", checkpoints)
-
-        
+     
 
         path_metrics_val = os.path.join(args.output_dir,"metrics_results_val.csv")
         with open(path_metrics_val, "w+") as f:
@@ -1135,7 +1137,7 @@ def main():
             result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
 
             results_train.update(result)
-            
+
         for checkpoint in checkpoints:
             # Reload the model
             global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
