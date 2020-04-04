@@ -836,7 +836,7 @@ def main():
 
         for checkpoint in checkpoints:
             # Reload the model
-            global_step = checkpoint.split("-")[-1] if len(checkpoints) > 1 else ""
+            global_step = checkpoint.split("-")[-1] if len(checkpoint.split("-")) > 1 else ""
             model = AutoModelForQuestionAnswering.from_pretrained(checkpoint)  # , force_download=True)
             model.to(args.device)
 
