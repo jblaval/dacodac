@@ -858,7 +858,7 @@ def main():
                     'HasAns_exact',
                     'HasAns_f1',
                     'HasAns_total',
-                    'best_exact'
+                    'best_exact',
                     'best_exact_thresh',
                     'best_f1',
                     'best_f1_thresh',
@@ -877,7 +877,7 @@ def main():
                     'HasAns_exact',
                     'HasAns_f1',
                     'HasAns_total',
-                    'best_exact'
+                    'best_exact',
                     'best_exact_thresh',
                     'best_f1',
                     'best_f1_thresh',
