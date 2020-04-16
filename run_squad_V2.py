@@ -413,7 +413,7 @@ def evaluate(args, model, tokenizer, evaluate_train=False, prefix=""):
 
 
 def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=False, output_examples=False):
-    if args.local_rank not in [-1, 0] and ((not evaluate) or (not evaluate_train)):
+    if args.local_rank not in [-1, 0] and ((not evaluate) and (not evaluate_train)):
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         logger.info(f"Begin torch.distributed.barrier() line 415")
         torch.distributed.barrier()
@@ -494,7 +494,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=Fals
             logger.info("Saving features into cached file %s", cached_features_file)
             torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
 
-    if args.local_rank == 0 and ((not evaluate) or (not evaluate_train)):
+    if args.local_rank == 0 and ((not evaluate) and (not evaluate_train)):
         logger.info(f"Begin torch.distributed.barrier()")
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
