@@ -270,8 +270,11 @@ def train(args, train_dataset, model, tokenizer):
     return global_step, tr_loss / global_step
 
 
-def evaluate(args, model, tokenizer, prefix=""):
-    dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=True, output_examples=True)
+def evaluate(args, model, tokenizer, evaluate_train=False, prefix=""):
+    if evaluate_train:
+        dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=True, output_examples=True)
+    else:
+        dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=True, output_examples=True)
 
     if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
         os.makedirs(args.output_dir)
@@ -405,20 +408,34 @@ def evaluate(args, model, tokenizer, prefix=""):
     return results
 
 
-def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=False):
-    if args.local_rank not in [-1, 0] and not evaluate:
+def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=False, output_examples=False):
+    if args.local_rank not in [-1, 0] and ((not evaluate) or (not evaluate_train)):
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
 
     # Load data features from cache or dataset file
     input_dir = args.data_dir if args.data_dir else "."
-    cached_features_file = os.path.join(
-        input_dir,
-        "cached_{}_{}_{}".format(
-            "dev" if evaluate else "train",
+    if evaluate :
+        filename ="cached_{}_{}_{}".format(
+            "dev",
             list(filter(None, args.model_name_or_path.split("/"))).pop(),
             str(args.max_seq_length),
-        ),
+        )
+    elif evaluate_train:
+        filename ="cached_{}_{}_{}".format(
+            "dev_train",
+            list(filter(None, args.model_name_or_path.split("/"))).pop(),
+            str(args.max_seq_length),
+        )
+    else :
+        filename ="cached_{}_{}_{}".format(
+            "train",
+            list(filter(None, args.model_name_or_path.split("/"))).pop(),
+            str(args.max_seq_length),
+        )
+    cached_features_file = os.path.join(
+        input_dir,
+        filename
     )
 
     # Init features and dataset from cache if it exists
@@ -448,16 +465,19 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             processor = SquadV2Processor() if args.version_2_with_negative else SquadV1Processor()
             if evaluate:
                 examples = processor.get_dev_examples(args.data_dir, filename=args.predict_file)
+            elif evaluate_train:
+                examples = processor.get_dev_examples(args.data_dir, filename=args.train_file)
             else:
                 examples = processor.get_train_examples(args.data_dir, filename=args.train_file)
 
+        if_training = not evaluate or not evaluate_train
         features, dataset = squad_convert_examples_to_features(
             examples=examples,
             tokenizer=tokenizer,
             max_seq_length=args.max_seq_length,
             doc_stride=args.doc_stride,
             max_query_length=args.max_query_length,
-            is_training=not evaluate,
+            is_training=if_training,
             return_dataset="pt",
             threads=args.threads,
         )
@@ -466,7 +486,7 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, output_examples=Fal
             logger.info("Saving features into cached file %s", cached_features_file)
             torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
 
-    if args.local_rank == 0 and not evaluate:
+    if args.local_rank == 0 and ((not evaluate) or (not evaluate_train)):
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
 
@@ -793,6 +813,7 @@ def main():
 
     # Evaluation - we can ask to evaluate all the checkpoints (sub-directories) in a directory
     results = {}
+    results_train = {}
     if args.do_eval and args.local_rank in [-1, 0]:
         if args.do_train:
             logger.info("Loading checkpoints saved during training for evaluation")
@@ -833,6 +854,25 @@ def main():
                     'best_f1_thresh',
                 ]
             )
+        
+        path_metrics_eval_train = os.path.join(args.output_dir,"metrics_results_train.csv")
+        with open(path_metrics_eval_train, "w+") as f:
+            writer = csv.writer(f)
+            writer.writerow(
+                [
+                    'global_step',
+                    'exact',
+                    'f1',
+                    'total',
+                    'HasAns_exact',
+                    'HasAns_f1',
+                    'HasAns_total',
+                    'best_exact'
+                    'best_exact_thresh',
+                    'best_f1',
+                    'best_f1_thresh',
+                ]
+            )
 
         for checkpoint in checkpoints:
             # Reload the model
@@ -840,7 +880,7 @@ def main():
             model = AutoModelForQuestionAnswering.from_pretrained(checkpoint)  # , force_download=True)
             model.to(args.device)
 
-            # Evaluate
+            # Evaluate on valid.json
             result = evaluate(args, model, tokenizer, prefix=global_step)
             list_keys = ['global_step']
             list_val = [global_step]
@@ -866,7 +906,34 @@ def main():
             result = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result.items())
             results.update(result)
 
-    logger.info("Results: {}".format(results))
+            #Evaluate on train.json
+            result_train = evaluate(args, model, tokenizer, evaluate_train=True,prefix=global_step)
+            list_keys = ['global_step']
+            list_val = [global_step]
+            for k, v in result_train.items():
+                list_keys.append(k)
+                list_val.append(v)
+
+            path_metrics_eval_train = os.path.join(args.output_dir,"metrics_results_train.csv")
+            try:
+                with open(path_metrics_eval_train, "a") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(
+                        list_keys
+                    )
+                with open(path_metrics_eval_train, "a") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(
+                        list_val
+                    )
+            except:
+                logger.info("Results not saved")
+
+            result_train = dict((k + ("_{}".format(global_step) if global_step else ""), v) for k, v in result_train.items())
+            results_train.update(result_train)
+
+    logger.info("Results on valid: {}".format(results))
+    logger.info("Results on train: {}".format(results_train))
 
     return results
 
