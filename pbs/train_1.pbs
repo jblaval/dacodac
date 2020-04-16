@@ -8,7 +8,8 @@
 #PBS -P isia
 
 # Go to the current directory 
-cd $PBS_O_WORKDIR
+cd $WORKDIR
+cd dacodac
 
 # Load the same modules as for compilation 
 module load anaconda3/5.3.1
