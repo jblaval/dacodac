@@ -272,13 +272,9 @@ def train(args, train_dataset, model, tokenizer):
 
 def evaluate(args, model, tokenizer, evaluate_train=False, prefix=""):
     if evaluate_train:
-        logger.info("Begin load_and_cache_examples on train")
         dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=True, output_examples=True)
-        logger.info("Finish load_and_cache_examples on train")
     else:
-        logger.info("Begin load_and_cache_examples on valid")
         dataset, examples, features = load_and_cache_examples(args, tokenizer, evaluate=True, output_examples=True)
-        logger.info("Finish load_and_cache_examples on valid")
 
     if not os.path.exists(args.output_dir) and args.local_rank in [-1, 0]:
         os.makedirs(args.output_dir)
@@ -415,9 +411,7 @@ def evaluate(args, model, tokenizer, evaluate_train=False, prefix=""):
 def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=False, output_examples=False):
     if args.local_rank not in [-1, 0] and ((not evaluate) and (not evaluate_train)):
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
-        logger.info(f"Begin torch.distributed.barrier() line 415")
         torch.distributed.barrier()
-        logger.info(f"Finish torch.distributed.barrier() line 415")
 
     # Load data features from cache or dataset file
     input_dir = args.data_dir if args.data_dir else "."
@@ -477,7 +471,6 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=Fals
                 examples = processor.get_train_examples(args.data_dir, filename=args.train_file)
 
         if_training = (not evaluate) and (not evaluate_train)
-        logger.info(f"Begin squad_convert_examples_to_features with if_training: {if_training}")
         features, dataset = squad_convert_examples_to_features(
             examples=examples,
             tokenizer=tokenizer,
@@ -488,17 +481,14 @@ def load_and_cache_examples(args, tokenizer, evaluate=False, evaluate_train=Fals
             return_dataset="pt",
             threads=args.threads,
         )
-        logger.info(f"Finish squad_convert_examples_to_features")
 
         if args.local_rank in [-1, 0]:
             logger.info("Saving features into cached file %s", cached_features_file)
             torch.save({"features": features, "dataset": dataset, "examples": examples}, cached_features_file)
 
     if args.local_rank == 0 and ((not evaluate) and (not evaluate_train)):
-        logger.info(f"Begin torch.distributed.barrier()")
         # Make sure only the first process in distributed training process the dataset, and the others will use the cache
         torch.distributed.barrier()
-        logger.info(f"Finish torch.distributed.barrier()")
 
     if output_examples:
         return dataset, examples, features
@@ -892,7 +882,6 @@ def main():
 
             # Evaluate on valid.json
             result = evaluate(args, model, tokenizer, prefix=global_step)
-            logger.info(f"Finish evaluation on valid file at {global_step} step")
             list_keys = ['global_step']
             list_val = [global_step]
             for k, v in result.items():
@@ -918,9 +907,7 @@ def main():
             results.update(result)
 
             #Evaluate on train.json
-            logger.info(f"Begin evaluation on train file at {global_step} step")
-            result_train = evaluate(args, model, tokenizer, evaluate_train=True, prefix=global_step)
-            logger.info(f"Finish evaluation on train file at {global_step} step")
+            result_train = evaluate(args, model, tokenizer, evaluate_train=True,prefix=global_step)
             list_keys = ['global_step']
             list_val = [global_step]
             for k, v in result_train.items():
