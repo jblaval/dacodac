@@ -890,11 +890,11 @@ def main():
 
             path_metrics_val = os.path.join(args.output_dir,"metrics_results_val.csv")
             try:
-                with open(path_metrics_val, "a") as f:
-                    writer = csv.writer(f)
-                    writer.writerow(
-                        list_keys
-                    )
+                # with open(path_metrics_val, "a") as f:
+                #     writer = csv.writer(f)
+                #     writer.writerow(
+                #         list_keys
+                #     )
                 with open(path_metrics_val, "a") as f:
                     writer = csv.writer(f)
                     writer.writerow(
@@ -916,11 +916,11 @@ def main():
 
             path_metrics_eval_train = os.path.join(args.output_dir,"metrics_results_train.csv")
             try:
-                with open(path_metrics_eval_train, "a") as f:
-                    writer = csv.writer(f)
-                    writer.writerow(
-                        list_keys
-                    )
+                # with open(path_metrics_eval_train, "a") as f:
+                #     writer = csv.writer(f)
+                #     writer.writerow(
+                #         list_keys
+                #     )
                 with open(path_metrics_eval_train, "a") as f:
                     writer = csv.writer(f)
                     writer.writerow(
