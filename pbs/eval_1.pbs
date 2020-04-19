@@ -18,7 +18,7 @@ source activate transformers_env
 # Run code
 python -m torch.distributed.launch --nproc_per_node=2 ./run_squad_V2.py \
     --model_type bert \
-    --model_name_or_path ./output_bert_bert-base-cased_data_giec_/ \
+    --model_name_or_path ./results/output_bert_bert-base-uncased_data_FQuAD_2282381.fusion/ \
     --output_dir ./results/output_bert_bert-base-uncased_data_FQuAD_2282381.fusion/ \
     --data_dir ./data_FQuAD \
     --train_file train.json \
