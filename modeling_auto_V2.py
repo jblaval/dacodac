@@ -871,9 +871,11 @@ class AutoModelForQuestionAnswering(object):
             model = AutoModelForQuestionAnswering.from_pretrained('./tf_model/bert_tf_checkpoint.ckpt.index', from_tf=True, config=config)
         """
         config = kwargs.pop("config", None)
+        logger.info(f"config : {type(config)}")
         if not isinstance(config, PretrainedConfig):
             config = AutoConfig.from_pretrained(pretrained_model_name_or_path, **kwargs)
 
+        logger.info(f"MODEL_FOR_QUESTION_ANSWERING_MAPPING : {MODEL_FOR_QUESTION_ANSWERING_MAPPING.items()}")
         for config_class, model_class in MODEL_FOR_QUESTION_ANSWERING_MAPPING.items():
             if isinstance(config, config_class):
                 return model_class.from_pretrained(pretrained_model_name_or_path, *model_args, config=config, **kwargs)
