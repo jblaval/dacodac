@@ -31,15 +31,14 @@ from torch.utils.data.distributed import DistributedSampler
 from tqdm import tqdm, trange
 
 from transformers import (
-    MODEL_FOR_QUESTION_ANSWERING_MAPPING,
+    AutoConfig,
+    AutoTokenizer,
     WEIGHTS_NAME,
     AdamW,
-    AutoConfig,
-    AutoModelForQuestionAnswering,
-    AutoTokenizer,
     get_linear_schedule_with_warmup,
     squad_convert_examples_to_features,
 )
+
 from transformers.data.metrics.squad_metrics import (
     compute_predictions_log_probs,
     compute_predictions_logits,
@@ -47,12 +46,16 @@ from transformers.data.metrics.squad_metrics import (
 )
 from transformers.data.processors.squad import SquadResult, SquadV1Processor, SquadV2Processor
 
+from modeling_auto_V2 import (
+    MODEL_FOR_QUESTION_ANSWERING_MAPPING,
+    AutoModelForQuestionAnswering,
+)
+
 
 try:
     from torch.utils.tensorboard import SummaryWriter
 except ImportError:
     from tensorboardX import SummaryWriter
-
 
 logger = logging.getLogger(__name__)
 
