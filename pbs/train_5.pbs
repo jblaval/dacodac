@@ -2,7 +2,7 @@
 #PBS -N isia01_lu
 #PBS -j oe
 #PBS -l walltime=08:00:00
-#PBS -l select=1:ncpus=24:ngpus=2:mem=20gb
+#PBS -l select=1:ncpus=24:ngpus=2:mem=32gb
 ##PBS -q gpuq
 #PBS -q isiaq
 #PBS -P isia
@@ -38,4 +38,4 @@ python -m torch.distributed.launch --nproc_per_node=2 ./run_squad_V2.py \
     --threads 24 \
     --do_train \
     --do_eval \
-    --eval_all_checkpoints "
+    --eval_all_checkpoints
