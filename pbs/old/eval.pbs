@@ -1,5 +1,5 @@
-#PBS -S /bin/bash
-#PBS -N squad_train_dual
+#PBS -S/bin/bash
+#PBS -N squad_train_dual_bert-base-cased_Fsquad_eval
 #PBS -j oe
 #PBS -l walltime=02:00:00
 #PBS -l select=1:ncpus=24:ngpus=2:mem=20gb
@@ -14,18 +14,16 @@ cd $PBS_O_WORKDIR
 module load anaconda3/5.3.1
 source activate transformers_env
 
-# Path to dataset
-##export SQUAD_DIR=/gpfs/opt/data/squad/1.1
-##export SQUAD_DIR=/gpfs/opt/data/squad/2.0
-
 # Run code
-python -m torch.distributed.launch --nproc_per_node=2 ./transformers/examples/run_squad.py \
-  --model_name_or_path debug_squad_2231363.fusion \
-  --do_train False \
+python -m torch.distributed.launch --nproc_per_node=2 ./run_squad_V2.py \
+  --model_type bert \
+  --model_name_or_path ./debug_squad_bert_base_cased_fsquad_2269533.fusion/ \
   --do_eval \
   --do_lower_case \
   --predict_file ./data_FQuAD/valid.json \
   --max_seq_length 384 \
   --doc_stride 128 \
   --threads 24 \
-  --output_dir ./debug_squad_$PBS_JOBID/
+  --output_dir ./debug_squad_bert_base_cased_fsquad_2269533.fusion/ \
+  --overwrite_cache \
+  --eval_all_checkpoints 

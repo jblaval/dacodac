@@ -1,0 +1,42 @@
+#PBS -S/bin/bash
+#PBS -N isia01_lu
+#PBS -j oe
+#PBS -l walltime=08:00:00
+#PBS -l select=1:ncpus=24:ngpus=2:mem=20gb
+##PBS -q gpuq
+#PBS -q isiaq
+#PBS -P isia
+
+# Go to the current directory 
+cd $WORKDIR
+cd dacodac
+
+# Load the same modules as for compilation 
+module load anaconda3/5.3.1
+source activate transformers_env
+
+# Run code
+python -m torch.distributed.launch --nproc_per_node=2 ./run_squad_V2.py \
+    --model_type bert \
+    --model_name_or_path ./results/output_bert_bert-base-uncased_data_FQuAD_2282381.fusion/ \
+    --output_dir ./results/output_bert_bert-base-uncased_data_FQuAD_2282381.fusion/ \
+    --data_dir ./data_FQuAD \
+    --train_file train.json \
+    --predict_file valid.json \
+    --per_gpu_train_batch_size 12 \
+    --learning_rate 0.00003 \
+    --weight_decay 0.0 \
+    --gradient_accumulation_steps 1 \
+    --adam_epsilon 0.00000001 \
+    --num_train_epochs 10 \
+    --max_seq_length 384 \
+    --max_answer_length 30 \
+    --max_query_length 64 \
+    --doc_stride 128 \
+    --seed 42 \
+    --save_steps 500 \
+    --threads 24 \
+    --do_eval \
+    --do_lower_case \
+    --overwrite_cache \
+    --eval_all_checkpoints 

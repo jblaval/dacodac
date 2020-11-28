@@ -1,0 +1,33 @@
+#PBS -S/bin/bash
+#PBS -N squad_train_dual_bert-base-cased_Fsquad_eval
+#PBS -j oe
+#PBS -l walltime=02:00:00
+#PBS -l select=1:ncpus=24:ngpus=2:mem=20gb
+##PBS -q gpuq
+#PBS -q isiaq
+#PBS -P isia
+
+# Go to the current directory 
+cd $PBS_O_WORKDIR
+
+# Load the same modules as for compilation 
+module load anaconda3/5.3.1
+source activate transformers_env
+
+# Run code
+python -m torch.distributed.launch --nproc_per_node=2 ./run_squad_modified.py \
+  --model_type bert \
+  --model_name_or_path ./debug_squad_bert_base-cased_Fsquad_2267499.fusion/ \
+  --do_eval \
+  --do_lower_case \
+  --train_file ./data_FQuAD/train.json \
+  --predict_file ./data_FQuAD/valid.json \
+  --per_gpu_train_batch_size 12 \
+  --learning_rate 3e-5 \
+  --num_train_epochs 2 \
+  --max_seq_length 384 \
+  --doc_stride 128 \
+  --threads 24 \
+  --output_dir ./debug_squad_bert_base-cased_Fsquad_2267499.fusion/ \
+  --overwrite_cache \
+  --eval_all_checkpoints 
